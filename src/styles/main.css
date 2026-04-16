@@ -170,11 +170,15 @@ body {
   border-color: var(--color-error);
 }
 
+.btn-stop svg {
+  fill: none;
+}
+
 /* Settings toggle */
 .settings-area {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
   padding-top: 8px;
   flex-shrink: 0;
 }
@@ -215,4 +219,27 @@ body {
 
 .toggle-track.active .toggle-thumb {
   left: 18px;
+}
+
+/* About button — same shape as stop button, drop zone muted color */
+.btn-about {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--text-muted);
+  border-color: #ccc;
+  margin-left: auto;
+}
+
+.btn-about svg {
+  fill: none;
+}
+
+.btn-about:hover {
+  color: var(--text-secondary);
+  background: var(--bg-dropzone);
 }

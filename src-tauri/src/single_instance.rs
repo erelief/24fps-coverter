@@ -15,12 +15,14 @@ use std::path::PathBuf;
 // =========================================================
 #[cfg(target_os = "windows")]
 mod imp {
-    use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    #[allow(dead_code)]
     const MUTEX_NAME: &str = "Global\\24fpsConverterSingleInstance";
+    #[allow(dead_code)]
     static MUTEX_HANDLE: AtomicUsize = AtomicUsize::new(0);
 
+    #[allow(dead_code)]
     pub fn is_another_instance_running() -> bool {
         use windows_sys::Win32::Foundation::{CloseHandle, ERROR_ALREADY_EXISTS, GetLastError};
         use windows_sys::Win32::System::Threading::CreateMutexW;
@@ -43,6 +45,7 @@ mod imp {
         }
     }
 
+    #[allow(dead_code)]
     pub fn bring_existing_to_front() -> Result<(), String> {
         use windows_sys::Win32::UI::WindowsAndMessaging::{
             FindWindowW, SetForegroundWindow, ShowWindow, SW_RESTORE,
@@ -65,7 +68,6 @@ mod imp {
 // =========================================================
 #[cfg(unix)]
 mod imp {
-    use super::*;
     use std::os::unix::fs::OpenOptionsExt;
     use std::os::unix::io::AsRawFd;
 
@@ -75,6 +77,7 @@ mod imp {
         path
     }
 
+    #[allow(dead_code)]
     pub fn is_another_instance_running() -> bool {
         let path = lock_file_path();
         // Open (or create) the lock file
@@ -104,6 +107,7 @@ mod imp {
         false
     }
 
+    #[allow(dead_code)]
     pub fn bring_existing_to_front() -> Result<(), String> {
         // Use osascript to activate the app by name
         let script = r#"
@@ -131,16 +135,19 @@ fn pending_file_path() -> PathBuf {
 }
 
 /// Check if another instance is already running.
+#[allow(dead_code)]
 pub fn is_another_instance_running() -> bool {
     imp::is_another_instance_running()
 }
 
 /// Bring the existing instance window to the foreground.
+#[allow(dead_code)]
 pub fn bring_existing_to_front() -> Result<(), String> {
     imp::bring_existing_to_front()
 }
 
 /// Append file paths to the pending file (append mode — no overwrite).
+#[allow(dead_code)]
 pub fn write_pending_files(files: &[String]) -> Result<(), String> {
     let path = pending_file_path();
     let mut file = std::fs::OpenOptions::new()
@@ -157,6 +164,7 @@ pub fn write_pending_files(files: &[String]) -> Result<(), String> {
 }
 
 /// Read and clear pending file paths (called by frontend polling).
+#[allow(dead_code)]
 pub fn read_pending_files() -> Option<Vec<String>> {
     let path = pending_file_path();
     if !path.exists() {

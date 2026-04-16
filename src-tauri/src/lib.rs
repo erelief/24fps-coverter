@@ -201,6 +201,71 @@ async fn cmd_check_pending_files() -> Result<Option<Vec<String>>, String> {
     Ok(single_instance::read_pending_files())
 }
 
+#[tauri::command]
+async fn cmd_get_ffmpeg_version(
+    state: State<'_, Arc<Mutex<ConversionState>>>,
+) -> Result<String, String> {
+    let s = state.lock().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "windows")]
+    use std::os::windows::process::CommandExt;
+
+    let mut cmd = std::process::Command::new(&s.ffmpeg_path);
+    cmd.args(["-version"]);
+
+    #[cfg(target_os = "windows")]
+    {
+        cmd.creation_flags(0x08000000);
+    }
+
+    let output = cmd.output().map_err(|e| format!("获取 FFmpeg 版本失败: {}", e))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Parse "ffmpeg version x.x.x" from first line
+    if let Some(line) = stdout.lines().next() {
+        if let Some(start) = line.find("version ") {
+            let rest = &line[start + 8..];
+            let ver = rest.split_whitespace().next().unwrap_or("unknown");
+            return Ok(ver.to_string());
+        }
+    }
+
+    Ok("unknown".into())
+}
+
+#[tauri::command]
+async fn cmd_get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
+async fn cmd_open_about(app: tauri::AppHandle) -> Result<(), String> {
+    // If already open, just focus it
+    if let Some(win) = app.get_webview_window("about") {
+        win.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    tauri::WebviewWindowBuilder::new(&app, "about", tauri::WebviewUrl::App("about.html".into()))
+        .title("关于 - 24fps 极速转换器")
+        .inner_size(420.0, 200.0)
+        .resizable(false)
+        .center()
+        .decorations(true)
+        .build()
+        .map_err(|e| format!("打开关于窗口失败: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn cmd_close_about(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window("about") {
+        win.close().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 pub fn run(initial_files: Vec<String>) {
     let ffmpeg_path = converter::ffmpeg::find_ffmpeg()
         .expect("找不到 FFmpeg！请将 ffmpeg 放入 src-tauri/binaries/ 目录");
@@ -237,7 +302,19 @@ pub fn run(initial_files: Vec<String>) {
             cmd_unregister_context_menu,
             cmd_is_context_menu_registered,
             cmd_check_pending_files,
+            cmd_get_ffmpeg_version,
+            cmd_get_app_version,
+            cmd_open_about,
+            cmd_close_about,
         ])
+        .on_window_event(|window, event| {
+            // Close about window when main window closes
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                if let Some(about) = window.app_handle().get_webview_window("about") {
+                    let _ = about.close();
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

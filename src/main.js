@@ -50,12 +50,16 @@ async function buildUI() {
         </div>
         <span>右键菜单集成</span>
       </div>
+      <button class="btn btn-about" id="btnAbout" title="关于">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      </button>
     </div>
   `;
 
   setupDropZone();
   setupStopButton();
   setupContextMenuToggle();
+  setupAboutButton();
   setupNativeDragDrop();
   setupEventListeners();
   await loadState();
@@ -276,6 +280,15 @@ function setupContextMenuToggle() {
 function updateToggleUI() {
   const track = document.getElementById("toggleTrack");
   if (track) track.classList.toggle("active", contextMenuRegistered);
+}
+
+// ---- About Button ----
+function setupAboutButton() {
+  const btn = document.getElementById("btnAbout");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    invoke("cmd_open_about").catch((e) => addLog(`打开关于窗口失败: ${e}`, true));
+  });
 }
 
 async function loadState() {
