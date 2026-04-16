@@ -1,0 +1,229 @@
+name: Build Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/pip/Cache
+            ~/.cache/pyinstaller
+            node_modules
+            target
+          key: ${{ runner.os }}-node20-${{ hashFiles('**/package-lock.json', '**/Cargo.lock') }}
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Download FFmpeg (Windows)
+        shell: pwsh
+        run: |
+          Write-Host "Downloading FFmpeg for Windows..."
+          New-Item -ItemType Directory -Force -Path ffmpeg-temp | Out-Null
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile "ffmpeg-temp/ffmpeg.zip"
+          Expand-Archive -Path "ffmpeg-temp/ffmpeg.zip" -DestinationPath ffmpeg-temp -Force
+          New-Item -ItemType Directory -Force -Path src-tauri/binaries | Out-Null
+          Copy-Item "ffmpeg-temp/ffmpeg-essentials_build/bin/ffmpeg.exe" `
+            "src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe"
+          Write-Host "FFmpeg downloaded successfully"
+          Remove-Item -Recurse -Force ffmpeg-temp
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: '24fps Converter ${{ github.ref_name }}'
+          releaseBody: 'See the assets to download this version.'
+          releaseDraft: false
+          prerelease: false
+          args: --target x86_64-pc-windows-msvc
+
+  build-macos-arm64:
+    name: Build macOS ARM64
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/pip
+            ~/.cache/pyinstaller
+            node_modules
+            target
+          key: ${{ runner.os }}-node20-arm64-${{ hashFiles('**/package-lock.json', '**/Cargo.lock') }}
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Download FFmpeg (macOS)
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L -o ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          unzip ffmpeg.zip
+          chmod +x ffmpeg
+          mv ffmpeg src-tauri/binaries/ffmpeg-aarch64-apple-darwin
+          rm ffmpeg.zip
+
+      - name: Prepare PNG icon for macOS
+        run: |
+          if [ ! -f src-tauri/icons/icon.icns ]; then
+            cp resources/.resources/fps-24-svgrepo-com.png src-tauri/icons/32x32.png
+            cp resources/.resources/fps-24-svgrepo-com.png src-tauri/icons/128x128.png
+            cp resources/.resources/fps-24-svgrepo-com.png src-tauri/icons/128x128@2x.png
+            # Generate .icns from PNG
+            sips -z 16 16 src-tauri/icons/32x32.png --out /tmp/icon_16x16.png
+            sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_16x16@2x.png
+            sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_32x32.png
+            sips -z 64 64 src-tauri/icons/128x128.png --out /tmp/icon_32x32@2x.png
+            sips -z 128 128 src-tauri/icons/128x128.png --out /tmp/icon_128x128.png
+            sips -z 256 256 src-tauri/icons/128x128@2x.png --out /tmp/icon_128x128@2x.png
+            sips -z 256 256 src-tauri/icons/128x128@2x.png --out /tmp/icon_256x256.png
+            sips -z 512 512 src-tauri/icons/128x128@2x.png --out /tmp/icon_256x256@2x.png
+            sips -z 512 512 src-tauri/icons/128x128@2x.png --out /tmp/icon_512x512.png
+            sips -z 1024 1024 src-tauri/icons/128x128@2x.png --out /tmp/icon_512x512@2x.png
+            mkdir -p /tmp/icon.iconset
+            cp /tmp/icon_16x16.png /tmp/icon.iconset/
+            cp /tmp/icon_16x16@2x.png /tmp/icon.iconset/icon_32x32.png
+            cp /tmp/icon_32x32.png /tmp/icon.iconset/
+            cp /tmp/icon_32x32@2x.png /tmp/icon.iconset/icon_64x64.png
+            cp /tmp/icon_128x128.png /tmp/icon.iconset/
+            cp /tmp/icon_128x128@2x.png /tmp/icon.iconset/icon_256x256.png
+            cp /tmp/icon_256x256.png /tmp/icon.iconset/
+            cp /tmp/icon_256x256@2x.png /tmp/icon.iconset/icon_512x512.png
+            cp /tmp/icon_512x512.png /tmp/icon.iconset/
+            cp /tmp/icon_512x512@2x.png /tmp/icon.iconset/icon_1024x1024.png
+            iconutil -c icns /tmp/icon.iconset -o src-tauri/icons/icon.icns
+          fi
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: '24fps Converter ${{ github.ref_name }}'
+          releaseBody: 'See the assets to download this version.'
+          releaseDraft: false
+          prerelease: false
+          args: --target aarch64-apple-darwin
+
+  build-macos-intel:
+    name: Build macOS Intel
+    runs-on: macos-13
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/pip
+            ~/.cache/pyinstaller
+            node_modules
+            target
+          key: ${{ runner.os }}-node20-x64-${{ hashFiles('**/package-lock.json', '**/Cargo.lock') }}
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Download FFmpeg (macOS Intel)
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L -o ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          unzip ffmpeg.zip
+          chmod +x ffmpeg
+          mv ffmpeg src-tauri/binaries/ffmpeg-x86_64-apple-darwin
+          rm ffmpeg.zip
+
+      - name: Prepare PNG icon for macOS
+        run: |
+          if [ ! -f src-tauri/icons/icon.icns ]; then
+            cp resources/.resources/fps-24-svgrepo-com.png src-tauri/icons/32x32.png
+            cp resources/.resources/fps-24-svgrepo-com.png src-tauri/icons/128x128.png
+            cp resources/.resources/fps-24-svgrepo-com.png src-tauri/icons/128x128@2x.png
+            # Generate .icns from PNG
+            sips -z 16 16 src-tauri/icons/32x32.png --out /tmp/icon_16x16.png
+            sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_16x16@2x.png
+            sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_32x32.png
+            sips -z 64 64 src-tauri/icons/128x128.png --out /tmp/icon_32x32@2x.png
+            sips -z 128 128 src-tauri/icons/128x128.png --out /tmp/icon_128x128.png
+            sips -z 256 256 src-tauri/icons/128x128@2x.png --out /tmp/icon_128x128@2x.png
+            sips -z 256 256 src-tauri/icons/128x128@2x.png --out /tmp/icon_256x256.png
+            sips -z 512 512 src-tauri/icons/128x128@2x.png --out /tmp/icon_256x256@2x.png
+            sips -z 512 512 src-tauri/icons/128x128@2x.png --out /tmp/icon_512x512.png
+            sips -z 1024 1024 src-tauri/icons/128x128@2x.png --out /tmp/icon_512x512@2x.png
+            mkdir -p /tmp/icon.iconset
+            cp /tmp/icon_16x16.png /tmp/icon.iconset/
+            cp /tmp/icon_16x16@2x.png /tmp/icon.iconset/icon_32x32.png
+            cp /tmp/icon_32x32.png /tmp/icon.iconset/
+            cp /tmp/icon_32x32@2x.png /tmp/icon.iconset/icon_64x64.png
+            cp /tmp/icon_128x128.png /tmp/icon.iconset/
+            cp /tmp/icon_128x128@2x.png /tmp/icon.iconset/icon_256x256.png
+            cp /tmp/icon_256x256.png /tmp/icon.iconset/
+            cp /tmp/icon_256x256@2x.png /tmp/icon.iconset/icon_512x512.png
+            cp /tmp/icon_512x512.png /tmp/icon.iconset/
+            cp /tmp/icon_512x512@2x.png /tmp/icon.iconset/icon_1024x1024.png
+            iconutil -c icns /tmp/icon.iconset -o src-tauri/icons/icon.icns
+          fi
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: '24fps Converter ${{ github.ref_name }}'
+          releaseBody: 'See the assets to download this version.'
+          releaseDraft: false
+          prerelease: false
+          args: --target x86_64-apple-darwin

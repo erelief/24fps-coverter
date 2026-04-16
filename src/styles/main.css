@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #f0f0f0;
+  --bg-dropzone: #e8e8e8;
+  --bg-log: #f8f8f8;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-muted: #888;
+  --border-color: #ddd;
+  --color-success: #4caf50;
+  --color-error: #d32f2f;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  user-select: none;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+/* Drop zone */
+.drop-zone {
+  background: var(--bg-dropzone);
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 15px;
+  flex-shrink: 0;
+}
+
+.drop-zone.drag-over {
+  border-color: #4a9eff;
+  background: #e0edff;
+}
+
+.drop-zone-text {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Status area */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.status-label {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Progress bar */
+.progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.progress-bar-track {
+  flex: 1;
+  height: 6px;
+  background: #ddd;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #4a9eff;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-bar-fill.indeterminate {
+  width: 30%;
+  animation: indeterminate 1.5s infinite ease-in-out;
+}
+
+@keyframes indeterminate {
+  0% { margin-left: 0%; }
+  50% { margin-left: 70%; }
+  100% { margin-left: 0%; }
+}
+
+/* Log panel */
+.log-panel {
+  flex: 1;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-header {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  background: #eee;
+  flex-shrink: 0;
+}
+
+.log-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 5px 8px;
+  background: var(--bg-log);
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.log-entry {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-entry.error {
+  color: var(--color-error);
+}
+
+/* Buttons */
+.btn {
+  padding: 4px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn:hover {
+  background: #f0f0f0;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-stop {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+/* Settings toggle */
+.settings-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+  flex-shrink: 0;
+}
+
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  background: #ccc;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.toggle-track.active {
+  background: #4a9eff;
+}
+
+.toggle-thumb {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-track.active .toggle-thumb {
+  left: 18px;
+}

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+target/
+Output/
+build/
+
+# FFmpeg binary (local dev only, CI downloads its own)
+resources/ffmpeg.exe
+resources/*.exe
+resources/.resources/
+
+# Sidecar binaries (downloaded in CI)
+src-tauri/binaries/ffmpeg-*
+
+# Old Python project
+src-python/
+*.pyc
+__pycache__/
+*.spec
+*.egg-info/
+
+# IDE & Editor
+.vscode/
+.idea/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+*.af~lock~
+*.lock~
+
+# Environment
+.env
+*.log
+
+# Tauri
+src-tauri/capabilities/
