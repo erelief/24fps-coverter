@@ -97,20 +97,14 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Download FFmpeg (macOS Universal)
+      - name: Download FFmpeg (macOS)
         run: |
           mkdir -p src-tauri/binaries
-          # Download ARM64 FFmpeg
-          curl -L -o ffmpeg-arm64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/arm64/zip"
-          unzip ffmpeg-arm64.zip -d ffmpeg-arm64
-          chmod +x ffmpeg-arm64/ffmpeg
-          # Download x86_64 FFmpeg
-          curl -L -o ffmpeg-x64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/x86_64/zip"
-          unzip ffmpeg-x64.zip -d ffmpeg-x64
-          chmod +x ffmpeg-x64/ffmpeg
-          # Create universal binary
-          lipo -create ffmpeg-arm64/ffmpeg ffmpeg-x64/ffmpeg -output src-tauri/binaries/ffmpeg-universal-apple-darwin
-          rm -rf ffmpeg-arm64 ffmpeg-x64 ffmpeg-arm64.zip ffmpeg-x64.zip
+          curl -L -o ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          unzip ffmpeg.zip
+          chmod +x ffmpeg
+          mv ffmpeg src-tauri/binaries/ffmpeg-universal-apple-darwin
+          rm ffmpeg.zip
 
       - name: Prepare PNG icon for macOS
         run: |
