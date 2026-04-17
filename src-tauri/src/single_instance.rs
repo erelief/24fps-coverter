@@ -70,6 +70,7 @@ mod imp {
 mod imp {
     use std::os::unix::fs::OpenOptionsExt;
     use std::os::unix::io::AsRawFd;
+    use std::path::PathBuf;
 
     fn lock_file_path() -> PathBuf {
         let mut path = std::env::temp_dir();

@@ -108,8 +108,6 @@ mod platform {
 
 #[cfg(target_os = "macos")]
 mod platform {
-    use super::*;
-
     pub struct MacOSContextMenu;
 
     impl super::ContextMenuManager for MacOSContextMenu {
