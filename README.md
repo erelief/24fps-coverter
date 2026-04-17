@@ -2,7 +2,7 @@
 
 > 只做 24 帧转换，别的不管。
 
-![软件截图](images/screenshot.png "软件截图")
+<img src="images/screenshot.png" width = "400" height = auto>
 
 ## 为什么存在
 
