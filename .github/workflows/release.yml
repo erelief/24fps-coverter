@@ -100,18 +100,14 @@ jobs:
       - name: Download FFmpeg (macOS Universal)
         run: |
           mkdir -p src-tauri/binaries
-          # Download ARM64 FFmpeg
-          curl -L -o ffmpeg-arm64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
-          unzip -o ffmpeg-arm64.zip
+          curl -L -o ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          unzip -o ffmpeg.zip
           chmod +x ffmpeg
-          mv ffmpeg src-tauri/binaries/ffmpeg-aarch64-apple-darwin
-          rm ffmpeg-arm64.zip
-          # Download x86_64 FFmpeg (same URL, evermeet.cx provides x86_64 by default)
-          curl -L -o ffmpeg-x64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
-          unzip -o ffmpeg-x64.zip
-          chmod +x ffmpeg
-          mv ffmpeg src-tauri/binaries/ffmpeg-x86_64-apple-darwin
-          rm ffmpeg-x64.zip
+          # Tauri universal build needs all three: arch-specific for compile + universal for bundle
+          cp ffmpeg src-tauri/binaries/ffmpeg-aarch64-apple-darwin
+          cp ffmpeg src-tauri/binaries/ffmpeg-x86_64-apple-darwin
+          cp ffmpeg src-tauri/binaries/ffmpeg-universal-apple-darwin
+          rm ffmpeg ffmpeg.zip
 
       - name: Prepare PNG icon for macOS
         run: |
