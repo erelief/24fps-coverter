@@ -101,11 +101,11 @@ jobs:
         run: |
           mkdir -p src-tauri/binaries
           # Download ARM64 FFmpeg
-          curl -L -o ffmpeg-arm64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          curl -L -o ffmpeg-arm64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/arm64/zip"
           unzip ffmpeg-arm64.zip -d ffmpeg-arm64
           chmod +x ffmpeg-arm64/ffmpeg
           # Download x86_64 FFmpeg
-          curl -L -o ffmpeg-x64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          curl -L -o ffmpeg-x64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/x86_64/zip"
           unzip ffmpeg-x64.zip -d ffmpeg-x64
           chmod +x ffmpeg-x64/ffmpeg
           # Create universal binary
