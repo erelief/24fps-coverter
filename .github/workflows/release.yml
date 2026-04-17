@@ -67,8 +67,8 @@ jobs:
           prerelease: false
           args: --target x86_64-pc-windows-msvc
 
-  build-macos-arm64:
-    name: Build macOS ARM64
+  build-macos:
+    name: Build macOS Universal
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -82,7 +82,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -92,19 +92,25 @@ jobs:
             ~/.cache/pyinstaller
             node_modules
             target
-          key: ${{ runner.os }}-node20-arm64-${{ hashFiles('**/package-lock.json', '**/Cargo.lock') }}
+          key: ${{ runner.os }}-node20-universal-${{ hashFiles('**/package-lock.json', '**/Cargo.lock') }}
 
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Download FFmpeg (macOS)
+      - name: Download FFmpeg (macOS Universal)
         run: |
           mkdir -p src-tauri/binaries
-          curl -L -o ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
-          unzip ffmpeg.zip
-          chmod +x ffmpeg
-          mv ffmpeg src-tauri/binaries/ffmpeg-aarch64-apple-darwin
-          rm ffmpeg.zip
+          # Download ARM64 FFmpeg
+          curl -L -o ffmpeg-arm64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          unzip ffmpeg-arm64.zip -d ffmpeg-arm64
+          chmod +x ffmpeg-arm64/ffmpeg
+          # Download x86_64 FFmpeg
+          curl -L -o ffmpeg-x64.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+          unzip ffmpeg-x64.zip -d ffmpeg-x64
+          chmod +x ffmpeg-x64/ffmpeg
+          # Create universal binary
+          lipo -create ffmpeg-arm64/ffmpeg ffmpeg-x64/ffmpeg -output src-tauri/binaries/ffmpeg-universal-apple-darwin
+          rm -rf ffmpeg-arm64 ffmpeg-x64 ffmpeg-arm64.zip ffmpeg-x64.zip
 
       - name: Prepare PNG icon for macOS
         run: |
@@ -112,7 +118,6 @@ jobs:
             cp resources/logo.png src-tauri/icons/32x32.png
             cp resources/logo.png src-tauri/icons/128x128.png
             cp resources/logo.png src-tauri/icons/128x128@2x.png
-            # Generate .icns from PNG
             sips -z 16 16 src-tauri/icons/32x32.png --out /tmp/icon_16x16.png
             sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_16x16@2x.png
             sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_32x32.png
@@ -147,86 +152,4 @@ jobs:
           releaseBody: 'See the assets to download this version.'
           releaseDraft: false
           prerelease: false
-          args: --target aarch64-apple-darwin
-
-  build-macos-intel:
-    name: Build macOS Intel
-    runs-on: macos-13
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-apple-darwin
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/pip
-            ~/.cache/pyinstaller
-            node_modules
-            target
-          key: ${{ runner.os }}-node20-x64-${{ hashFiles('**/package-lock.json', '**/Cargo.lock') }}
-
-      - name: Install frontend dependencies
-        run: npm install
-
-      - name: Download FFmpeg (macOS Intel)
-        run: |
-          mkdir -p src-tauri/binaries
-          curl -L -o ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
-          unzip ffmpeg.zip
-          chmod +x ffmpeg
-          mv ffmpeg src-tauri/binaries/ffmpeg-x86_64-apple-darwin
-          rm ffmpeg.zip
-
-      - name: Prepare PNG icon for macOS
-        run: |
-          if [ ! -f src-tauri/icons/icon.icns ]; then
-            cp resources/logo.png src-tauri/icons/32x32.png
-            cp resources/logo.png src-tauri/icons/128x128.png
-            cp resources/logo.png src-tauri/icons/128x128@2x.png
-            # Generate .icns from PNG
-            sips -z 16 16 src-tauri/icons/32x32.png --out /tmp/icon_16x16.png
-            sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_16x16@2x.png
-            sips -z 32 32 src-tauri/icons/32x32.png --out /tmp/icon_32x32.png
-            sips -z 64 64 src-tauri/icons/128x128.png --out /tmp/icon_32x32@2x.png
-            sips -z 128 128 src-tauri/icons/128x128.png --out /tmp/icon_128x128.png
-            sips -z 256 256 src-tauri/icons/128x128@2x.png --out /tmp/icon_128x128@2x.png
-            sips -z 256 256 src-tauri/icons/128x128@2x.png --out /tmp/icon_256x256.png
-            sips -z 512 512 src-tauri/icons/128x128@2x.png --out /tmp/icon_256x256@2x.png
-            sips -z 512 512 src-tauri/icons/128x128@2x.png --out /tmp/icon_512x512.png
-            sips -z 1024 1024 src-tauri/icons/128x128@2x.png --out /tmp/icon_512x512@2x.png
-            mkdir -p /tmp/icon.iconset
-            cp /tmp/icon_16x16.png /tmp/icon.iconset/
-            cp /tmp/icon_16x16@2x.png /tmp/icon.iconset/icon_32x32.png
-            cp /tmp/icon_32x32.png /tmp/icon.iconset/
-            cp /tmp/icon_32x32@2x.png /tmp/icon.iconset/icon_64x64.png
-            cp /tmp/icon_128x128.png /tmp/icon.iconset/
-            cp /tmp/icon_128x128@2x.png /tmp/icon.iconset/icon_256x256.png
-            cp /tmp/icon_256x256.png /tmp/icon.iconset/
-            cp /tmp/icon_256x256@2x.png /tmp/icon.iconset/icon_512x512.png
-            cp /tmp/icon_512x512.png /tmp/icon.iconset/
-            cp /tmp/icon_512x512@2x.png /tmp/icon.iconset/icon_1024x1024.png
-            iconutil -c icns /tmp/icon.iconset -o src-tauri/icons/icon.icns
-          fi
-
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: '24fps Converter ${{ github.ref_name }}'
-          releaseBody: 'See the assets to download this version.'
-          releaseDraft: false
-          prerelease: false
-          args: --target x86_64-apple-darwin
+          args: --target universal-apple-darwin
